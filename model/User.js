@@ -37,9 +37,6 @@ const userSchema = new mongoose.Schema({
       relationship: {
          type: Number,
          enum: [1, 2, 3]
-      },
-      refreshToken: {
-         type: String, default: ''
       }
    },
    { timestamps: true}

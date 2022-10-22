@@ -3,7 +3,8 @@ const userController = require('../controller/userController')
 
 router.put('/:userId', userController.updateUser)
 router.get('/', userController.getUsers)
-router.get('/:userId', userController.getUserById)
+router.get('/query', userController.getUser)
+router.get('/friends/:userId', userController.getFriends)
 
 //get user by name or email
 router.delete('/', userController.deleteUser)

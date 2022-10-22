@@ -8,11 +8,11 @@ const postsSchema = new mongoose.Schema({
          type:String, max: 500
       },
       img: {
-         type: String, default: ""
+         type: String, default: ''
       },
       likes: {
          type: Array, default: []
-      },
+      }
    },
    { timestamps: true}
 )

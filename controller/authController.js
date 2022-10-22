@@ -25,7 +25,7 @@ const handleRegister = async (req, res) => {
          password: hashedPassword
       })
       const result = await user.save() 
-      res.status(201).json({status: true, result})
+      res.status(201).json(result)
    }catch(error){
       console.log(error)
       res.sendStatus(500)
@@ -51,26 +51,15 @@ const handleLogin = async (req, res) => {
       const accessToken = await jwt.sign(
          {
             userInfo:{
-               username: user.username,
+               username: user.username
             }
          },
          process.env.ACCESS_TOKEN_SECRET,
-         { expiresIn: '3600s'}
+         { expiresIn: '1d'}
       )
-      const refreshToken = await jwt.sign(
-         {
-            userInfo:{
-               username: user.username,
-            }
-         },
-         process.env.REFRESH_TOKEN_SECRET,
-         { expiresIn: '2d'}
-      )
-      user.refreshToken = refreshToken
-      await user.save()
 
-      res.cookie('jwt', accessToken, { httpOnly: true, sameSite: 'None', maxAge: 24 * 60 * 60 * 1000}) //secure: true
-      res.status(200).json({status: true, message: accessToken})
+      res.cookie('jwt', accessToken, {httpOnly: true, sameSite: 'None', maxAge: 24 * 60 * 60 * 1000}) //secure: true
+      res.status(200).json(user)
    }
    catch(error){
       console.log(error)

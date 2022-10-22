@@ -1,4 +1,5 @@
 const User = require('../model/User')
+const Post = require('../model/Post')
 const bcrypt = require('bcrypt')
 
 const updateUser = async(req, res) => {
@@ -46,32 +47,45 @@ const deleteUser = async (req, res) => {
 const getUsers = async (req, res) => {
    try{
       const allUsers = await User.find().select('-password').lean()
+      const allPosts = await Post.find().lean()
       if(!allUsers?.length) return res.status(400).json('No users found')
-      res.status(200).json({status: true, allUsers})
+      res.status(200).json(allUsers)
    }catch(error){
       res.sendStatus(500)
    }
 }
 
-const getUserByName = async (req, res) => {
-   const {email} = req.params
+const getUser = async (req, res) => {
+   const userId = req.query.userId
+   const username = req.query.username
+   
    try{
-      const user = await User.findOne(email).select('-password').exec()
+      const user = username ? await User.findOne({username}).select('-password').exec() : await User.findById(userId).select('-password').exec() 
       if(!user) return res.status(400).json(`User with email: ${email} not found`)
-      res.status(200).json({status: true, user})
+      res.status(200).json(user)
    }
    catch(error){
       res.sendStatus(500)
    }
 }
 
-const getUserById = async (req, res) => {
-   const {userId} = req.params
+const getFriends = async(req, res) => {
+   const {userId} = req.params;
+   if(!userId) return res.status(400).json({status: false, message: 'User id required'})
    try{
-      const user = await User.findById(userId).select('-password').exec()
-      if(!user) return res.status(400).json(`User with ID: ${userId} not found`)
-      const {isAdmin, updatedAt, ...other} = user._doc
-      res.status(200).json({status: true, other})
+      const currentUser = await User.findOne({_id: userId}).exec();
+      const friends = await Promise.all(
+         currentUser.following.map(friendId => {
+            return User.findById(friendId).lean()
+         })
+      );
+      if(!friends?.length) return res.status(400).json({status: false, message: 'You are not following anybody yet'})
+      let friendList = [];
+      friends.map(friend => {
+         const {_id, username, profilePicture} = friend;
+         friendList.push({_id, username, profilePicture})
+      })
+      res.status(200).json(friendList);
    }
    catch(error){
       res.sendStatus(500)
@@ -86,9 +100,9 @@ const followUser = async (req, res) => {
          const followedUser = await User.findById(userId).exec()
          const followingUser = await User.findById(req.body.id).exec()
 
-         if(!followedUser.followers.includes(followingUser._id)){
-            await followedUser.updateOne({$push:{followers: followingUser._id}})
-            await followingUser.updateOne({$push:{following: followedUser._id}})
+         if(!followedUser.following.includes(followingUser._id)){
+            await followedUser.updateOne({$push:{following: followingUser._id}})
+            await followingUser.updateOne({$push:{followers: followedUser._id}})
             res.status(200).json('user has been followed')
          }
          else{
@@ -111,9 +125,9 @@ const unFollowUser = async (req, res) => {
          const followedUser = await User.findById(userId).exec()
          const followingUser = await User.findById(req.body.id).exec()
 
-         if(followedUser.followers.includes(followingUser._id)){
-            await followedUser.updateOne({$pull:{followers: followingUser._id}})
-            await followingUser.updateOne({$pull:{following: followedUser._id}})
+         if(followedUser.following.includes(followingUser._id)){
+            await followedUser.updateOne({$pull:{following: followingUser._id}})
+            await followingUser.updateOne({$pull:{followers: followedUser._id}})
             res.status(200).json('user has been unfollowed')
          }
          else{
@@ -129,4 +143,4 @@ const unFollowUser = async (req, res) => {
    }
 }
 
-module.exports = { updateUser, deleteUser, getUsers, getUserById, deleteUser, followUser, unFollowUser }
+module.exports = { getFriends, getUser, updateUser, deleteUser, getUsers, deleteUser, followUser, unFollowUser }
