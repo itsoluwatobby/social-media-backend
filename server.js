@@ -6,6 +6,7 @@ const mongoose = require('mongoose');
 require('./config/configDB')();
 const morgan = require('morgan')
 const cors = require('cors');
+const {verifyToken} = require('./middleware/verifyJwt')
 const corsOptions = require('./config/corsOptions')
 const cookieParser = require('cookie-parser');
 const fileUpload = require('express-fileupload')
@@ -21,6 +22,8 @@ app.use(cookieParser())
 app.use(fileUpload())
 
 app.use('/api/auth', require('./router/authRoute'))
+//app.use(verifyToken)
+
 app.use('/api/users', require('./router/userRoutes'))
 app.use('/api/posts', require('./router/postsRoute'))
 app.use('/api/conversation', require('./router/conversationRoute'))
